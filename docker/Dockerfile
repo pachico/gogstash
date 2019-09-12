@@ -1,11 +1,13 @@
-FROM busybox:ubuntu-14.04
+FROM golang:1 AS build
+RUN go get -u -v "github.com/tsaikd/gobuilder"
+WORKDIR /go/src/github.com/tsaikd/gogstash
+ADD go.mod /go/src/github.com/tsaikd/gogstash
+ADD go.sum /go/src/github.com/tsaikd/gogstash
+RUN go mod download
 
-MAINTAINER tsaikd <tsaikd@gmail.com>
+ADD . /go/src/github.com/tsaikd/gogstash
+RUN gobuilder --all --check --test
 
-ENV GOGSTASH_VERSION 0.1.17
-
-ADD https://github.com/tsaikd/gogstash/releases/download/${GOGSTASH_VERSION}/gogstash-Linux-x86_64 /usr/local/bin/gogstash
-
-RUN chmod +x /usr/local/bin/gogstash
-
+FROM busybox:1-glibc
+COPY --from=build /go/src/github.com/tsaikd/gogstash/gogstash /usr/local/bin/
 CMD ["gogstash"]
